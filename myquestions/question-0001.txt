@@ -1,0 +1,11 @@
+El Problema:
+En el monitoreo de turbinas eólicas, los sensores producen datos altamente correlacionados durante su funcionamiento normal. Si ocurre un fallo mecánico, esta correlación se rompe. Tu misión es utilizar Análisis de Componentes Principales (PCA) no solo para reducir la dimensionalidad, sino para detectar estas anomalías a través del error de reconstrucción.
+
+Tu Misión:
+Escribe una función llamada `detectar_anomalias_pca(X_train, X_test, threshold_percentile)` que realice lo siguiente:
+
+1. Entrene un modelo `PCA` de `sklearn.decomposition` utilizando `X_train`, configurado para retener exactamente el 90% de la varianza explicada (n_components=0.90).
+2. Proyecte `X_test` al espacio reducido y, posteriormente, lo reconstruya a su dimensión original utilizando `inverse_transform`.
+3. Utilice `numpy` para calcular el Error Cuadrático Medio (MSE) por cada fila entre el `X_test` original y el reconstruido.
+4. Calcule un umbral dinámico de error usando `numpy.percentile` sobre los errores calculados en el paso anterior, basándose en el parámetro `threshold_percentile`.
+5. Retorne una copia del DataFrame `X_test` original (pandas), añadiendo una nueva columna booleana llamada 'alerta_integridad', que sea True si el error de reconstrucción de esa fila supera el umbral calculado.
