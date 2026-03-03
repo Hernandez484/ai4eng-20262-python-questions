@@ -1,1 +1,34 @@
+Escribe una función llamada rankear_importancia_features(df, target_col) que reciba:
 
+  - df        : un pd.DataFrame con columnas numéricas, algunas pueden contener
+                valores faltantes (NaN).
+  - target_col: string con el nombre de la columna objetivo
+                (clasificación binaria o multiclase).
+
+La función debe realizar exactamente los siguientes pasos en orden:
+
+  1. Separar características y objetivo:
+       X          = df.drop(columns=[target_col])
+       y          = df[target_col]
+
+  2. Imputar los valores faltantes en X usando SimpleImputer con
+     strategy='median'  (mediana, NO media).
+
+  3. Entrenar un RandomForestClassifier con
+       n_estimators=100
+       random_state=42
+     sobre los datos imputados.
+
+  4. Extraer los feature_importances_ del modelo entrenado.
+
+  5. Construir y devolver un pd.DataFrame con exactamente dos columnas:
+       'feature'     : nombre de cada variable (string)
+       'importancia' : valor de importancia (float)
+     El DataFrame debe estar ordenado de MAYOR a MENOR importancia
+     y con el índice reiniciado (reset_index(drop=True)).
+
+Restricciones:
+  - La función NO debe modificar el DataFrame original.
+  - La función NO debe hacer ningún train/test split;
+    entrena con la totalidad de los datos recibidos.
+  - Las únicas librerías permitidas son pandas, numpy y sklearn.
