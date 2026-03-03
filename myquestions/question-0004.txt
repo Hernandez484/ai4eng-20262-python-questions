@@ -1,1 +1,42 @@
+Escribe una función llamada validar_estratificado(X, y, n_folds, tipo_modelo)
+que reciba:
 
+  - X          : array numpy de forma (m, n) con las características (sin NaN).
+  - y          : array numpy de forma (m,) con las etiquetas de clase.
+  - n_folds    : entero >= 2, número de particiones de la validación cruzada.
+  - tipo_modelo: string que indica el clasificador a usar. Valores posibles:
+                   'logistic'  ->  LogisticRegression(max_iter=1000)
+                   'arbol'     ->  DecisionTreeClassifier(random_state=42)
+                   'knn'       ->  KNeighborsClassifier(n_neighbors=5)
+
+La función debe realizar exactamente los siguientes pasos:
+
+  1. Instanciar el modelo según el valor de tipo_modelo (ver tabla anterior).
+
+  2. Crear un StratifiedKFold con:
+       n_splits   = n_folds
+       shuffle    = True
+       random_state = 42
+
+  3. Implementar manualmente el bucle de validación cruzada
+     (NO usar cross_val_score ni ninguna función equivalente de alto nivel):
+       - Para cada fold, obtener los índices train/test de StratifiedKFold.
+       - Dividir X e y usando dichos índices.
+       - Entrenar el modelo con el subconjunto de entrenamiento.
+       - Predecir sobre el subconjunto de prueba.
+       - Calcular las tres métricas siguientes sobre las predicciones del fold:
+           * accuracy_score
+           * f1_score(average='macro')
+           * precision_score(average='macro', zero_division=0)
+
+  4. Devolver un diccionario con exactamente estas cuatro claves:
+       'metricas_por_fold' : np.ndarray de forma (n_folds, 3) donde cada fila
+                             contiene [accuracy, f1_macro, precision_macro]
+                             del fold correspondiente.
+       'media_accuracy'    : float, media de la columna 0, redondeado a 4 decimales.
+       'media_f1'          : float, media de la columna 1, redondeado a 4 decimales.
+       'media_precision'   : float, media de la columna 2, redondeado a 4 decimales.
+
+Restricciones:
+  - No usar cross_val_score, cross_validate ni ningún wrapper equivalente.
+  - Las únicas librerías permitidas son numpy y sklearn.
