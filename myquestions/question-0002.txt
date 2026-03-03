@@ -1,12 +1,13 @@
+Nombre de la función: predecir_eficiencia_reducida
+
 El Problema:
-Los modelos tradicionales de Machine Learning no entienden la secuencia temporal de forma nativa. Para predecir el futuro basándonos en el pasado, debemos transformar nuestra serie de tiempo utilizando ingeniería de características (Feature Engineering), creando variables de rezago (lags).
+Cuando se tienen demasiadas variables correlacionadas, es mejor reducir la dimensionalidad antes de aplicar regresión para evitar el sobreajuste.
 
-Tu Misión:
-Escribe una función llamada `predecir_series_tiempo(df_ventas, n_lags)` que reciba un DataFrame `df_ventas` (con las columnas 'fecha' y 'ventas') y un entero `n_lags` indicando cuántos periodos hacia atrás se deben mirar. La función debe realizar lo siguiente:
+Misión:
+Escribe una función llamada predecir_eficiencia_reducida(X, y, n_componentes) que:
+1. Use sklearn.decomposition.PCA para reducir la matriz X al número de componentes especificado.
+2. Use sklearn.linear_model.Lasso con un alpha de 0.5 para entrenar un modelo de regresión sobre los componentes obtenidos.
+3. Calcule la Varianza Explicada Acumulada de los componentes seleccionados usando numpy.
+4. Devuelva un diccionario con las claves: 'modelo', 'varianza_total' (float) y 'coeficientes' (array de coeficientes del modelo).
 
-1. Usar `pandas` para crear nuevas columnas que representen rezagos de la columna 'ventas'. Si n_lags=2, crea 'lag_1' y 'lag_2' usando el método `.shift()`.
-2. Eliminar todas las filas que contengan valores nulos (generados al hacer el shift).
-3. Separar las variables: la columna 'ventas' original será el objetivo (y), y las nuevas columnas de lags conformarán la matriz de características (X). Ambas deben ser arrays de `numpy`.
-4. Entrenar un modelo `LinearRegression` de `sklearn.linear_model` usando X e y.
-5. Calcular el Error Cuadrático Medio usando `mean_squared_error` de `sklearn.metrics` sobre las predicciones de entrenamiento.
-6. Retornar una tupla: `(valor_mse, array_predicciones)`. El valor MSE debe ser un float y las predicciones un array de numpy.
+Librerías requeridas: numpy, sklearn.
