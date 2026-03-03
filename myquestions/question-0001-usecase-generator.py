@@ -1,50 +1,50 @@
 import pandas as pd
 import numpy as np
-from sklearn.decomposition import PCA
+from sklearn.svm import LinearSVC
+from sklearn.metrics import accuracy_score
 
-def generar_caso_de_uso_detectar_anomalias_pca():
+def generar_caso_de_uso_clasificar_sensores_con_ventanas():
     """
-    Genera un caso de uso aleatorio para la función detectar_anomalias_pca.
-    Retorna una tupla con el diccionario de inputs y el output esperado.
+    Generador de casos de uso para la función clasificar_sensores_con_ventanas.
+    Produce un input aleatorio y el output esperado basado en la lógica del ejercicio.
     """
-    # 1. Generación de parámetros aleatorios
-    n_train = np.random.randint(150, 300)
-    n_test = np.random.randint(40, 80)
-    n_features = np.random.randint(8, 15)
-    threshold_percentile = np.random.randint(85, 96)
+    n_rows = np.random.randint(150, 300)
+    ventana_rand = np.random.randint(2, 5)
     
-    # 2. Generar datos base con alta correlación (variables latentes)
-    matriz_proyeccion = np.random.randn(3, n_features) 
-    
-    X_train_np = np.dot(np.random.randn(n_train, 3), matriz_proyeccion) + np.random.randn(n_train, n_features) * 0.05
-    X_test_np = np.dot(np.random.randn(n_test, 3), matriz_proyeccion) + np.random.randn(n_test, n_features) * 0.05
-    
-    # Inyectar anomalías aleatorias en test para que el PCA falle al reconstruirlas
-    num_anomalias = np.random.randint(2, 6)
-    indices_anomalos = np.random.choice(range(n_test), size=num_anomalias, replace=False)
-    X_test_np[indices_anomalos] += np.random.randn(num_anomalias, n_features) * 8
-    
-    columnas = [f'sensor_{i}' for i in range(n_features)]
-    X_train = pd.DataFrame(X_train_np, columns=columnas)
-    X_test = pd.DataFrame(X_test_np, columns=columnas)
-    
-    # 3. Diccionario de entrada (Input)
-    input_dict = {
-        'X_train': X_train,
-        'X_test': X_test.copy(),
-        'threshold_percentile': threshold_percentile
+    # Generar datos aleatorios
+    data = {
+        'temp': np.random.normal(50, 10, n_rows),
+        'presion': np.random.normal(100, 20, n_rows),
+        'target': np.random.choice([0, 1], n_rows)
     }
+    df_input = pd.DataFrame(data)
     
-    # 4. Calcular la salida esperada (Output)
-    pca = PCA(n_components=0.90)
-    pca.fit(X_train)
+    # Inyectar algunos infinitos para probar la limpieza con Numpy
+    df_input.iloc[np.random.randint(0, n_rows), 0] = np.inf
+
+    # --- Cálculo del Output Esperado ---
+    df_proc = df_input.copy()
+    features = ['temp', 'presion']
     
-    X_test_reconstruido = pca.inverse_transform(pca.transform(X_test))
+    # 1. Rolling std
+    df_proc[features] = df_proc[features].rolling(window=ventana_rand).std()
     
-    mse_por_fila = np.mean((X_test.values - X_test_reconstruido)**2, axis=1)
-    umbral = np.percentile(mse_por_fila, threshold_percentile)
+    # 2. Numpy clean (inf to nan) and drop
+    df_proc.replace([np.inf, -np.inf], np.nan, inplace=True)
+    df_proc.dropna(inplace=True)
     
-    df_output = X_test.copy()
-    df_output['alerta_integridad'] = mse_por_fila > umbral
+    X = df_proc[features]
+    y = df_proc['target']
     
-    return input_dict, df_output
+    model = LinearSVC(random_state=42, max_iter=2000)
+    model.fit(X, y)
+    acc = accuracy_score(y, model.predict(X))
+    
+    input_dict = {
+        "df": df_input,
+        "target_col": "target",
+        "ventana": ventana_rand
+    }
+    output = (model, acc)
+    
+    return input_dict, output
