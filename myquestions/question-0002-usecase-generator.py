@@ -1,50 +1,41 @@
-import pandas as pd
 import numpy as np
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
+from sklearn.decomposition import PCA
+from sklearn.linear_model import Lasso
 
-def generar_caso_de_uso_predecir_series_tiempo():
+def generar_caso_de_uso_predecir_eficiencia_reducida():
     """
-    Genera un caso de uso aleatorio para la función predecir_series_tiempo.
-    Retorna una tupla con el diccionario de inputs y el output esperado.
+    Generador de casos de uso para la función predecir_eficiencia_reducida.
     """
-    # 1. Generación de parámetros aleatorios
-    n_samples = np.random.randint(80, 200)
-    n_lags = np.random.randint(1, 6)
+    n_samples = np.random.randint(100, 200)
+    n_features = np.random.randint(10, 20)
+    n_comp = np.random.randint(2, 6)
     
-    # 2. Generar una serie de tiempo sintética (tendencia senoidal + ruido)
-    fechas = pd.date_range(start='2026-01-01', periods=n_samples, freq='D')
-    tendencia = np.linspace(0, 15, n_samples)
-    ventas = np.sin(tendencia) * 50 + np.random.randn(n_samples) * 10 + 100
+    # Generar matrices aleatorias con Numpy
+    X_input = np.random.rand(n_samples, n_features)
+    y_input = np.random.rand(n_samples)
     
-    df_ventas = pd.DataFrame({'fecha': fechas, 'ventas': ventas})
+    # --- Cálculo del Output Esperado ---
+    # 1. PCA
+    pca = PCA(n_components=n_comp)
+    X_pca = pca.fit_transform(X_input)
     
-    # 3. Diccionario de entrada (Input)
+    # 2. Lasso
+    model = Lasso(alpha=0.5)
+    model.fit(X_pca, y_input)
+    
+    # 3. Varianza acumulada con Numpy
+    var_acumulada = np.sum(pca.explained_variance_ratio_)
+    
     input_dict = {
-        'df_ventas': df_ventas.copy(),
-        'n_lags': n_lags
+        "X": X_input,
+        "y": y_input,
+        "n_componentes": n_comp
     }
     
-    # 4. Calcular la salida esperada (Output)
-    df_temp = df_ventas.copy()
-    columnas_lags = []
+    output = {
+        'modelo': model,
+        'varianza_total': float(var_acumulada),
+        'coeficientes': model.coef_
+    }
     
-    for i in range(1, n_lags + 1):
-        nombre_col = f'lag_{i}'
-        df_temp[nombre_col] = df_temp['ventas'].shift(i)
-        columnas_lags.append(nombre_col)
-        
-    df_temp = df_temp.dropna()
-    
-    X_esperado = df_temp[columnas_lags].values
-    y_esperado = df_temp['ventas'].values
-    
-    modelo = LinearRegression()
-    modelo.fit(X_esperado, y_esperado)
-    predicciones = modelo.predict(X_esperado)
-    
-    mse_esperado = float(mean_squared_error(y_esperado, predicciones))
-    
-    output_esperado = (mse_esperado, predicciones)
-    
-    return input_dict, output_esperado
+    return input_dict, output
