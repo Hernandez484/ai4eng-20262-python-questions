@@ -1,32 +1,75 @@
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.metrics import log_loss
+PREGUNTA: Clasificación de Tipos de Vidrio (Ensambles y Log-Loss)
+FUNCIÓN: evaluar_cristales(X_train, X_test, y_train, y_test)
+REPO ORIGEN: Farleybr/Python-questions-LLM  —  question-0003
+AUTOR RESPUESTA: [Tu nombre aquí]
+========================================================================
 
-def evaluar_cristales(X_train, X_test, y_train, y_test):
-    """
-    Entrena un ensamble GradientBoostingClassifier y evalúa su rendimiento con Log-Loss.
-    
-    Argumentos:
-    X_train -- Array con las características de entrenamiento.
-    X_test  -- Array con las características de prueba.
-    y_train -- Array con las etiquetas reales de entrenamiento.
-    y_test  -- Array con las etiquetas reales de prueba.
-    
-    Devuelve:
-    Una tupla (modelo, puntuacion_log_loss) donde:
-    - modelo es el GradientBoostingClassifier entrenado con random_state=42.
-    - puntuacion_log_loss es el valor float de la métrica Log-Loss sobre el conjunto de prueba.
-    """
-    # 1. Crear e instanciar el modelo GradientBoostingClassifier con random_state=42
-    modelo = GradientBoostingClassifier(random_state=42)
-    
-    # 2. Entrenar el modelo con los datos de entrenamiento
-    modelo.fit(X_train, y_train)
-    
-    # 3. Obtener las predicciones probabilísticas sobre el conjunto de prueba
-    probabilidades = modelo.predict_proba(X_test)
-    
-    # 4. Calcular la pérdida logarítmica (Log-Loss)
-    puntuacion_log_loss = log_loss(y_test, probabilidades)
-    
-    # 5. Devolver la tupla con el modelo entrenado y el valor de Log-Loss
-    return modelo, puntuacion_log_loss
+DESCRIPCIÓN DEL PROBLEMA
+-------------------------
+En análisis forense, clasificar el tipo de vidrio de una escena del
+crimen no es suficiente: la corte necesita también la probabilidad de
+que el modelo esté en lo correcto. El juez quiere un número global que
+mida la confianza del sistema, y esa métrica es el Log-Loss (pérdida
+logarítmica).
+
+A diferencia de la exactitud (accuracy), el Log-Loss penaliza fuerte-
+mente las predicciones de alta confianza que resultan erróneas. Un
+modelo que dice "99 % de certeza" y se equivoca paga mucho más que
+uno que dice "60 % de certeza" y falla. Cuanto más cercano a 0, mejor.
+
+SOLUCIÓN IMPLEMENTADA
+---------------------
+La función realiza cuatro pasos en orden estricto:
+
+1. INSTANCIAR EL ENSAMBLE
+   GradientBoostingClassifier(random_state=42)
+   Se fija random_state=42 exactamente como exige el enunciado para
+   garantizar reproducibilidad. El clasificador construye árboles de
+   decisión de forma secuencial, donde cada árbol corrige los errores
+   del anterior (boosting), logrando alta precisión en clasificación
+   multiclase.
+
+2. ENTRENAR EL MODELO
+   modelo.fit(X_train, y_train)
+   Se ajustan todos los árboles sobre el conjunto de entrenamiento.
+   No se aplica escalado: GradientBoosting es invariante a la escala
+   porque los árboles se basan en umbrales de partición, no distancias.
+
+3. PREDICCIONES PROBABILÍSTICAS
+   probabilidades = modelo.predict_proba(X_test)
+   Retorna una matriz (n_test × n_clases) con la probabilidad de
+   pertenecer a cada clase. Cada fila suma 1. Estas probabilidades
+   son las que usa el juez forense para evaluar la confianza.
+
+4. CALCULAR LOG-LOSS Y RETORNAR
+   puntuacion_log_loss = log_loss(y_test, probabilidades)
+   La función log_loss de sklearn calcula:
+       L = -1/N * Σ Σ y_ij * log(p_ij)
+   donde y_ij es 1 si la muestra i pertenece a la clase j, y p_ij
+   es la probabilidad predicha.
+   Se retorna la tupla (modelo, puntuacion_log_loss).
+
+DECISIONES DE DISEÑO
+--------------------
+- No se escalan los datos: los árboles de decisión no lo necesitan y
+  el generador de casos de uso tampoco aplica escalado.
+- Se usa predict_proba() y no predict(): la métrica Log-Loss requiere
+  probabilidades, no etiquetas duras.
+- random_state=42 es obligatorio para que el output coincida con el
+  generador (que también entrena con random_state=42 para comparar).
+- La tupla se retorna en el orden (modelo, float) para ser compatible
+  con el desempaquetado del generador: mod, score = evaluar_cristales(...)
+
+EJEMPLO DE USO COMPATIBLE CON EL GENERADOR DE CASOS
+----------------------------------------------------
+    entrada, salida_esperada = generar_caso_de_uso_evaluar_cristales()
+    modelo, log_loss_val = evaluar_cristales(**entrada)
+
+    # Verificación
+    _, loss_esp = salida_esperada
+    assert abs(log_loss_val - loss_esp) < 1e-9
+
+DEPENDENCIAS
+------------
+    from sklearn.ensemble import GradientBoostingClassifier
+    from sklearn.metrics import log_loss
