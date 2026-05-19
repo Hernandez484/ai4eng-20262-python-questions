@@ -1,1 +1,32 @@
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.metrics import log_loss
 
+def evaluar_cristales(X_train, X_test, y_train, y_test):
+    """
+    Entrena un ensamble GradientBoostingClassifier y evalúa su rendimiento con Log-Loss.
+    
+    Argumentos:
+    X_train -- Array con las características de entrenamiento.
+    X_test  -- Array con las características de prueba.
+    y_train -- Array con las etiquetas reales de entrenamiento.
+    y_test  -- Array con las etiquetas reales de prueba.
+    
+    Devuelve:
+    Una tupla (modelo, puntuacion_log_loss) donde:
+    - modelo es el GradientBoostingClassifier entrenado con random_state=42.
+    - puntuacion_log_loss es el valor float de la métrica Log-Loss sobre el conjunto de prueba.
+    """
+    # 1. Crear e instanciar el modelo GradientBoostingClassifier con random_state=42
+    modelo = GradientBoostingClassifier(random_state=42)
+    
+    # 2. Entrenar el modelo con los datos de entrenamiento
+    modelo.fit(X_train, y_train)
+    
+    # 3. Obtener las predicciones probabilísticas sobre el conjunto de prueba
+    probabilidades = modelo.predict_proba(X_test)
+    
+    # 4. Calcular la pérdida logarítmica (Log-Loss)
+    puntuacion_log_loss = log_loss(y_test, probabilidades)
+    
+    # 5. Devolver la tupla con el modelo entrenado y el valor de Log-Loss
+    return modelo, puntuacion_log_loss
