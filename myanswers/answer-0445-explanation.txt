@@ -1,17 +1,68 @@
-import pandas as pd
+PREGUNTA: Limpieza de Datos de Sensores Industriales
+FUNCIÓN: limpiar_sensores(df)
+REPO ORIGEN: pablocastanoj-maker/Ejercicio-LLMs-IA-UdeA  —  question-0001
+AUTOR RESPUESTA: [Tu nombre aquí]
+========================================================================
 
-def limpiar_sensores(df):
-    """
-    Limpia los datos de un DataFrame de sensores aplicando interpolación lineal,
-    relleno hacia adelante (ffill), relleno hacia atrás (bfill) y eliminación de duplicados.
-    
-    Argumentos:
-    df -- pd.DataFrame original con posibles valores nulos y filas duplicadas.
-    
-    Devuelve:
-    pd.DataFrame limpio siguiendo la secuencia exacta del generador de casos de uso.
-    """
-    # Se aplica secuencialmente la interpolación, ffill, bfill y la eliminación de duplicados
-    df_clean = df.interpolate().ffill().bfill().drop_duplicates()
-    
-    return df_clean
+DESCRIPCIÓN DEL PROBLEMA
+-------------------------
+En una planta industrial los sensores registran datos de forma continua,
+pero fallos de comunicación pueden provocar dos tipos de corrupción:
+  - Valores perdidos (NaN): la lectura no llegó o llegó corrupta.
+  - Filas duplicadas: la misma lectura se registró más de una vez.
+
+Antes de cualquier análisis, el DataFrame debe estar limpio de ambos
+problemas.
+
+SOLUCIÓN IMPLEMENTADA
+---------------------
+La función aplica tres operaciones en cadena, en el orden exacto que
+refleja el generador de casos de uso:
+
+1. INTERPOLACIÓN LINEAL — df.interpolate()
+   Rellena los NaNs internos estimando el valor entre los dos vecinos
+   más cercanos. Es la estrategia más adecuada para señales de sensores
+   porque asume una variación continua y suave entre lecturas. Preserva
+   la tendencia local del dato sin sesgar la distribución con estadísticos
+   globales (como la media).
+
+2. FORWARD-FILL — .ffill()
+   Propaga hacia adelante el último valor válido conocido. Resuelve los
+   NaNs que .interpolate() no pudo cubrir: aquellos al final del
+   DataFrame, donde no hay vecino posterior para interpolar.
+
+3. BACKWARD-FILL — .bfill()
+   Propaga hacia atrás el primer valor válido siguiente. Resuelve los
+   NaNs que .ffill() tampoco cubrió: aquellos al inicio del DataFrame,
+   donde no existe valor previo para propagar.
+
+   Con la cadena interpolate → ffill → bfill se garantiza que cualquier
+   configuración de NaNs queda completamente resuelta.
+
+4. ELIMINAR DUPLICADOS — .drop_duplicates()
+   Elimina filas exactamente iguales. Se aplica al final, sobre datos ya
+   completados, para que la comparación sea sobre valores reales y no
+   sobre NaNs que podrían enmascarar duplicados reales.
+
+ORDEN DE OPERACIONES — POR QUÉ IMPORTA
+---------------------------------------
+- Interpolar antes de ffill/bfill: produce estimaciones más precisas
+  para NaNs con vecinos en ambos lados, algo que ffill/bfill no logran.
+- drop_duplicates al final: evitar eliminarlo antes impediría que
+  interpolate use los vecinos correctos.
+- El orden es idéntico al del generador de casos de uso para garantizar
+  coincidencia exacta del output.
+
+EJEMPLO DE USO COMPATIBLE CON EL GENERADOR DE CASOS
+----------------------------------------------------
+    params, esperado = generar_caso_de_uso_limpiar_sensores()
+    resultado = limpiar_sensores(**params)
+
+    # Verificación
+    assert resultado.reset_index(drop=True).equals(
+        esperado.reset_index(drop=True)
+    )
+
+DEPENDENCIAS
+------------
+    import pandas as pd
