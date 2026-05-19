@@ -1,1 +1,65 @@
+PREGUNTA: Detección de Inyecciones de Datos en Sensores de IoT
+FUNCIÓN: detectar_intrusiones_temporales(df, contamination=0.01)
+AUTOR RESPUESTA: [Tu nombre aquí]
+========================================================================
 
+DESCRIPCIÓN DEL PROBLEMA
+-------------------------
+En una red de sensores de presión de agua, un atacante puede inyectar
+datos que parecen normales individualmente (están dentro del rango
+permitido), pero son anómalos en su contexto temporal: una presión alta
+es normal a las 10:00 AM pero sospechosa a las 3:00 AM.
+
+SOLUCIÓN IMPLEMENTADA
+---------------------
+La función sigue cuatro pasos:
+
+1. INGENIERÍA DE CARACTERÍSTICAS CÍCLICAS (NumPy)
+   El tiempo es circular: las 23:59 y las 00:01 están separadas por
+   2 minutos, pero numéricamente por 23.97 horas. Para capturar esa
+   proximidad se transforma la columna 'hora' con seno y coseno:
+
+       hora_sin = sin(2 * π * hora / 24)
+       hora_cos = cos(2 * π * hora / 24)
+
+   Estas dos dimensiones representan la hora como un punto en el
+   círculo unitario, preservando la continuidad temporal.
+
+2. PREPARACIÓN DE DATOS (Pandas)
+   Se eliminan la columna 'hora' original del DataFrame de trabajo
+   para evitar redundancia lineal con las nuevas características
+   cíclicas. El modelo solo recibe: [presion, hora_sin, hora_cos].
+
+3. DETECCIÓN DE ANOMALÍAS (Scikit-learn)
+   Se instancia IsolationForest(contamination=contamination,
+   random_state=42). El algoritmo aísla observaciones construyendo
+   árboles aleatorios: los puntos que se separan con pocos cortes
+   son anomalías. Devuelve -1 para anomalías y +1 para normales.
+
+4. RETORNO
+   Se añade la columna booleana 'es_anomalia' al DataFrame ORIGINAL
+   (no al procesado), donde True = -1 (anomalía).
+
+DECISIONES DE DISEÑO
+--------------------
+- Se trabaja sobre df.copy() para no modificar el DataFrame original
+  durante el procesamiento interno.
+- La columna 'hora' se elimina del DataFrame de entrenamiento (X)
+  pero se conserva en el DataFrame de retorno para trazabilidad.
+- random_state=42 garantiza reproducibilidad de resultados.
+- El parámetro contamination es configurable para ajustarse a
+  diferentes entornos de red.
+
+EJEMPLO DE USO COMPATIBLE CON EL GENERADOR DE CASOS
+----------------------------------------------------
+    args, output_esperado = generar_caso_de_uso_detectar_intrusiones_temporales()
+    mi_resultado = detectar_intrusiones_temporales(**args)
+
+    # Verificación
+    assert (mi_resultado['es_anomalia'] == output_esperado['es_anomalia']).all()
+
+DEPENDENCIAS
+------------
+    import pandas as pd
+    import numpy as np
+    from sklearn.ensemble import IsolationForest
