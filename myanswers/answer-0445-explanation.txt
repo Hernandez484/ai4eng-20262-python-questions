@@ -1,1 +1,17 @@
+import pandas as pd
 
+def limpiar_sensores(df):
+    """
+    Limpia los datos de un DataFrame de sensores aplicando interpolación lineal,
+    relleno hacia adelante (ffill), relleno hacia atrás (bfill) y eliminación de duplicados.
+    
+    Argumentos:
+    df -- pd.DataFrame original con posibles valores nulos y filas duplicadas.
+    
+    Devuelve:
+    pd.DataFrame limpio siguiendo la secuencia exacta del generador de casos de uso.
+    """
+    # Se aplica secuencialmente la interpolación, ffill, bfill y la eliminación de duplicados
+    df_clean = df.interpolate().ffill().bfill().drop_duplicates()
+    
+    return df_clean
